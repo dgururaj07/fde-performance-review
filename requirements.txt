@@ -1,0 +1,7 @@
+uvicorn
+requests
+fastapi
+pydantic
+psycopg[binary]
+python-dotenv
+httpx
