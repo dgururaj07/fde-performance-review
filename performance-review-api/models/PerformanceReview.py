@@ -1,33 +1,14 @@
-"""Pydantic models for the performance_reviews table (OpenAPI: ReviewCreate, Review)."""
+"""Pydantic models for the performance_reviews table (OpenAPI: Review)."""
 
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 
 class ReviewStatus(str, Enum):
     COMPLETED = "Completed"
-
-
-class ReviewCreate(BaseModel):
-    """Submitted values. average_rating and id are created by the backend."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    employee_id: int = Field(..., ge=1, description="Foreign key to employees.id, NOT the employee code", examples=[1])
-    period_id: int = Field(..., ge=1, description="Foreign key to review_periods.id", examples=[1])
-    quality_rating: int = Field(..., ge=1, le=5, examples=[4])
-    delivery_rating: int = Field(..., ge=1, le=5, examples=[5])
-    teamwork_rating: int = Field(..., ge=1, le=5, examples=[4])
-    comments: str = Field(
-        ...,
-        min_length=1,
-        pattern=r"\S",
-        description="Required, non-whitespace manager feedback",
-        examples=["Strong ownership and collaboration throughout the review period."],
-    )
 
 
 class Review(BaseModel):
