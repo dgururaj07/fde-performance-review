@@ -143,3 +143,46 @@ def test_openapi_documents_review_contract():
     op = schema["paths"]["/api/reviews"]["get"]
     assert op["responses"]["200"]["content"]["application/json"]["schema"]["items"]["$ref"].endswith("/Review")
     assert {p["name"] for p in op["parameters"]} == {"employee_id", "period_id"}
+
+
+def test_get_review_by_id(seed):
+    review_id = seed["reviews"]["e1p2"]
+    response = client.get(f"/api/reviews/{review_id}")
+    assert response.status_code == 200
+    row = response.json()
+    assert row["id"] == review_id
+    assert row["employee_code"] == f"T{seed['tag']}1"
+    assert row["period_name"] == f"Test {seed['tag']} H2"
+    assert row["average_rating"] == 3.67
+    assert row["status"] == "Completed"
+    assert row["created_at"] == "2026-10-25T09:30:00Z"
+
+
+def test_get_review_matches_list_item(seed):
+    review_id = seed["reviews"]["e2p1"]
+    [listed] = client.get("/api/reviews", params={"employee_id": seed["emp"][1]}).json()
+    assert client.get(f"/api/reviews/{review_id}").json() == listed
+
+
+def test_get_unknown_review_returns_404():
+    response = client.get(f"/api/reviews/{UNKNOWN_ID}")
+    assert response.status_code == 404
+    assert response.json() == {
+        "code": "REVIEW_NOT_FOUND",
+        "message": f"No review exists with id {UNKNOWN_ID}.",
+    }
+
+
+@pytest.mark.parametrize("value, error_type", [("abc", "int_parsing"), ("0", "greater_than_equal")])
+def test_get_review_invalid_id_returns_422(value, error_type):
+    response = client.get(f"/api/reviews/{value}")
+    assert response.status_code == 422
+    issue = response.json()["detail"][0]
+    assert issue["loc"] == ["path", "id"]
+    assert issue["type"] == error_type
+
+
+def test_openapi_documents_review_detail():
+    op = client.get("/openapi.json").json()["paths"]["/api/reviews/{id}"]["get"]
+    assert op["responses"]["200"]["content"]["application/json"]["schema"]["$ref"].endswith("/Review")
+    assert op["responses"]["404"]["content"]["application/json"]["schema"]["$ref"].endswith("/ErrorResponse")

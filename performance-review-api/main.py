@@ -3,12 +3,13 @@
 from typing import Optional
 
 import psycopg
-from fastapi import APIRouter, FastAPI, Query, Request
+from fastapi import APIRouter, FastAPI, Path, Query, Request
 from fastapi.responses import JSONResponse
 
 from models.ErrorResponse import ErrorResponse
 from models.PerformanceReview import Review
 from services import services
+from services.services import NotFoundError
 
 app = FastAPI(title="Employee Performance Review Management System API", version="1.0.0")
 router = APIRouter(prefix="/api")
@@ -18,6 +19,12 @@ router = APIRouter(prefix="/api")
 async def database_unavailable(_: Request, __: psycopg.OperationalError) -> JSONResponse:
     body = ErrorResponse(code="DATABASE_UNAVAILABLE", message="Database is unavailable. Try again later.")
     return JSONResponse(status_code=503, content=body.model_dump())
+
+
+@app.exception_handler(NotFoundError)
+async def not_found(_: Request, exc: NotFoundError) -> JSONResponse:
+    body = ErrorResponse(code=exc.code, message=exc.message)
+    return JSONResponse(status_code=404, content=body.model_dump())
 
 
 @router.get(
@@ -32,6 +39,20 @@ def list_reviews(
     period_id: Optional[int] = Query(None, ge=1, description="review_periods.id (numeric DB key)"),
 ) -> list[Review]:
     return services.list_reviews(employee_id=employee_id, period_id=period_id)
+
+
+@router.get(
+    "/reviews/{id}",
+    response_model=Review,
+    summary="Get one submitted review by ID",
+    tags=["Optional - Review Details"],
+    operation_id="getReviewById",
+    responses={404: {"model": ErrorResponse, "description": "Review not found"}},
+)
+def get_review(
+    id: int = Path(..., ge=1, description="Numeric primary key of performance_reviews.id"),
+) -> Review:
+    return services.get_review(id)
 
 
 app.include_router(router)

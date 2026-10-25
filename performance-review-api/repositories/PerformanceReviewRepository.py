@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from db.connection import fetch_all
+from db.connection import fetch_all, fetch_one
 
 _SELECT_REVIEWS = """
     SELECT pr.id,
@@ -37,3 +37,7 @@ def list_reviews(employee_id: Optional[int] = None, period_id: Optional[int] = N
         sql += " WHERE " + " AND ".join(clauses)
     sql += " ORDER BY pr.created_at DESC, pr.id DESC"
     return fetch_all(sql, params)
+
+
+def get_review(review_id: int) -> Optional[dict]:
+    return fetch_one(_SELECT_REVIEWS + " WHERE pr.id = %s", (review_id,))

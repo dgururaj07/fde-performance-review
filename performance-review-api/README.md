@@ -39,6 +39,7 @@ From `performance-review-api/`:
 
 - Swagger UI: http://localhost:8000/docs
 - `GET http://localhost:8000/api/reviews?employee_id=1&period_id=1` (both filters optional)
+- `GET http://localhost:8000/api/reviews/101` (one review; 404 if it does not exist)
 
 ## Test
 
